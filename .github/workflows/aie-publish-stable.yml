@@ -2,10 +2,8 @@ name: AIE Publish Stable VSIX
 
 on:
   push:
-    branches:
-      - aie-gitlab-migration
-
-    workflow_dispatch:
+    tags:
+        - "v*-aie"
 
 permissions:
   contents: write
@@ -28,20 +26,12 @@ jobs:
           pnpm vsix
           ls -la bin/
 
-      - name: Determine version
-        id: version
-        run: |
-          VERSION=$(node -p "require('./src/package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ steps.version.outputs.version }}-aie-test"
-
+          TAG="${GITHUB_REF_NAME}" 
           gh release create "$TAG" \
             --title "AIE ${TAG}" \
-            --notes "Temporary migration validation release" \
-            --target "$GITHUB_SHA" \
+            --notes "AIE stable release" \
             bin/*.vsix

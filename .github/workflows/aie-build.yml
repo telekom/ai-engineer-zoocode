@@ -1,10 +1,6 @@
 name: AIE Build VSIX
 
 on:
-  push:
-    branches:
-      - aie-gitlab-migration
-
   workflow_dispatch:
 
 permissions:
