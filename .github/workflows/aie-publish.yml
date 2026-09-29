@@ -1,64 +1,72 @@
 name: AIE Publish VSIX
 
 on:
-    push:
-        branches:
-            - aie-gitlab-migration
-    workflow_dispatch:
+  workflow_run:
+    workflows: ["AIE Build VSIX"]
+    types:
+      - completed
+
+  workflow_dispatch:
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    publish:
-        runs-on: ubuntu-latest
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            - name: Setup Node.js and pnpm
-              uses: ./.github/actions/setup-node-pnpm
-              with:
-                  install-args: "--frozen-lockfile"
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          install-args: "--frozen-lockfile"
 
-            - name: Build VSIX
-              run: |
-                  pnpm vsix
-                  ls -la bin/
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aie-vsix
+          path: bin
 
-            - name: Fetch tags
-              run: git fetch --tags
+      - name: Verify VSIX artifact
+        run: |
+            ls -la bin/
 
-            - name: Determine pre-release version
-              id: version
-              run: |
-                  BASE_VERSION=$(node -p "require('./src/package.json').version")
+      - name: Fetch tags
+        run: git fetch --tags
 
-                  EXISTING_TAGS=$(git tag -l "v${BASE_VERSION}-a.*" || true)
+      - name: Determine pre-release version
+        id: version
+        run: |
+          BASE_VERSION=$(node -p "require('./src/package.json').version")
 
-                  if [ -z "$EXISTING_TAGS" ]; then
-                    NEXT_COUNTER=1
-                  else
-                    LATEST_COUNTER=$(echo "$EXISTING_TAGS" | sed "s/v${BASE_VERSION}-a\.//" | sort -n | tail -1)
-                    NEXT_COUNTER=$((LATEST_COUNTER + 1))
-                  fi
+          EXISTING_TAGS=$(git tag -l "v${BASE_VERSION}-a.*" || true)
 
-                  PRERELEASE_VERSION="${BASE_VERSION}-a.${NEXT_COUNTER}"
+          if [ -z "$EXISTING_TAGS" ]; then
+            NEXT_COUNTER=1
+          else
+            LATEST_COUNTER=$(echo "$EXISTING_TAGS" | sed "s/v${BASE_VERSION}-a\.//" | sort -n | tail -1)
+            NEXT_COUNTER=$((LATEST_COUNTER + 1))
+          fi
 
-                  echo "version=${PRERELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+          PRERELEASE_VERSION="${BASE_VERSION}-a.${NEXT_COUNTER}"
 
-            - name: Create GitHub Pre-release
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  TAG="v${{ steps.version.outputs.version }}"
+          echo "version=${PRERELEASE_VERSION}" >> "$GITHUB_OUTPUT"
 
-                  gh release create "$TAG" \
-                    --prerelease \
-                    --title "AIE ${TAG}" \
-                    --notes "AIE pre-release build" \
-                    --target "$GITHUB_SHA" \
-                    bin/*.vsix
+      - name: Create GitHub Pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+
+          gh release create "$TAG" \
+            --prerelease \
+            --title "AIE ${TAG}" \
+            --notes "AIE pre-release build" \
+            --target "$GITHUB_SHA" \
+            bin/*.vsix
