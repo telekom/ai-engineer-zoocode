@@ -37,20 +37,21 @@ jobs:
           echo "GITHUB_REF_NAME=$GITHUB_REF_NAME"
           git tag
 
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          
-          gh release view "$TAG" >/dev/null 2>&1 && {
-            echo "Release already exists"
-            exit 1
-          }
 
-          gh release create "$TAG" \
-            --verify-tag \
-            --target "${GITHUB_SHA}" \
-            --title "AIE ${TAG}" \
-            --notes "AIE stable release" \
-            bin/*.vsix
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release exists, uploading VSIX"
+            gh release upload "$TAG" bin/*.vsix --clobber
+          else
+            echo "Creating release"
+            gh release create "$TAG" \
+              --verify-tag \
+              --target "${GITHUB_SHA}" \
+              --title "AIE ${TAG}" \
+              --notes "AIE stable release" \
+              bin/*.vsix
+          fi
