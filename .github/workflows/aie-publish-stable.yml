@@ -41,8 +41,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${GITHUB_REF_NAME}" 
+          TAG="${GITHUB_REF_NAME}"
+          
+          gh release view "$TAG" >/dev/null 2>&1 && {
+            echo "Release already exists"
+            exit 1
+          }
+
           gh release create "$TAG" \
+            --verify-tag \
+            --target "${GITHUB_SHA}" \
             --title "AIE ${TAG}" \
             --notes "AIE stable release" \
             bin/*.vsix
