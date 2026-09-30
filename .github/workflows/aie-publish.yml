@@ -2,8 +2,7 @@ name: AIE Publish VSIX
 
 on:
   push:
-    branches:
-      - aie-gitlab-migration
+    
   workflow_dispatch:
 
 permissions:

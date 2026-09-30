@@ -31,12 +31,6 @@ jobs:
       - name: Fetch tags
         run: git fetch --tags
 
-      - name: Debug ref
-        run: |
-          echo "GITHUB_REF=$GITHUB_REF"
-          echo "GITHUB_REF_NAME=$GITHUB_REF_NAME"
-          git tag
-
       - name: Create or Update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
