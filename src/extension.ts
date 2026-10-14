@@ -377,26 +377,29 @@ export async function activate(context: vscode.ExtensionContext) {
 	// FOR AIE : Auto update mechanism
 	// TODO: Update URL to Zoo Code once it's been deployed on plugin proxy
 	// Uncomment once plugin proxy is ready
-	const infoURL = "https://plugins.ai.t-systems.net/v1/registry/497248/packages/latest/info"
-	const downloadURL = "https://plugins.ai.t-systems.net/v1/registry/497248/packages/latest/download"
+	const infoURL = "https://plugins.dev.aie.ai.t-systems.net/preview/v1/registry/releases/zoo-code/latest/info"
+	const downloadURL = "https://plugins.dev.aie.ai.t-systems.net/preview/v1/registry/releases/zoo-code/latest/download"
 
 	nodeFetch(infoURL)
 		//@ts-ignore
 		.then(async (manifest_response) => {
 			const manifest_json: any = await manifest_response.json()
+			console.log("manifest_json: ", manifest_json)
 
 			const downloadVersionRaw = manifest_json.package_version
 			//Regex to extract version-number to compare with package.json version, it just filters out the -aie suffix from version
-			const versionMatch = downloadVersionRaw.match(/^\d+\.\d+\.\d+(?:-\d+)?/)
-			const DOWNLOAD_VERSION = versionMatch ? versionMatch[0] : null
+			const versionMatch = downloadVersionRaw.match(/^v?(\d+\.\d+\.\d+(?:-\d+)?)/)
+			console.log("versionMatch: ", versionMatch)
+			let DOWNLOAD_VERSION = versionMatch ? versionMatch[1] : null
 
 			if (!DOWNLOAD_VERSION) {
 				throw new Error(
-					"Download version on AIFS plugin proxy for Zoo Code is incorrectly formatted, try again!",
+					"Download version on AIE plugin proxy for Zoo Code is incorrectly formatted, try again!",
 				)
 			}
 
 			if (isNewerVersion(DOWNLOAD_VERSION, APP_VERSION)) {
+				console.log("new version available download....")
 				const filename = `zoo-code-${DOWNLOAD_VERSION}.vsix`
 				const vsixPath: string = path.join(__dirname, filename)
 				console.log("Zoo Code vsixPath: ", vsixPath)
