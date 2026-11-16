@@ -377,8 +377,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// FOR AIE : Auto update mechanism
 	// TODO: Update URL to Zoo Code once it's been deployed on plugin proxy
 	// Uncomment once plugin proxy is ready
-	const infoURL = "https://plugins.dev.aie.ai.t-systems.net/preview/v1/registry/releases/zoo-code/latest/info"
-	const downloadURL = "https://plugins.dev.aie.ai.t-systems.net/preview/v1/registry/releases/zoo-code/latest/download"
+	const infoURL = "https://plugins.ai.t-systems.net/v1/registry/releases/zoo-code/latest/info"
+	const downloadURL = "https://plugins.ai.t-systems.net/v1/registry/releases/zoo-code/latest/download"
 
 	nodeFetch(infoURL)
 		//@ts-ignore
