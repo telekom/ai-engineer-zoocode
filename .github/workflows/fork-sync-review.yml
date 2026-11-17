@@ -1,0 +1,35 @@
+# Advisory review of an existing sync/<version>-aie branch.
+# Posts the review and pushes approved security fixes. Does not tag a release.
+name: Fork sync review
+
+on:
+  workflow_dispatch:
+    inputs:
+      UPSTREAM_TAG:
+        description: Pristine upstream tag the sync branch was built from (for example v3.80.1)
+        required: true
+        type: string
+      AIE_REF:
+        description: Last shipped *-aie tag
+        required: true
+        type: string
+        default: v3.72.0-3-aie
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    uses: telekom/ai-engineer-fork-sync/.github/workflows/fork-sync.yml@0e1dd76db5b5ad60148f5935e4ff6a2870c54e6f
+    with:
+      upstream_tag: ${{ inputs.UPSTREAM_TAG }}
+      aie_ref: ${{ inputs.AIE_REF }}
+      job: review
+      fork_sync_engine_repo: telekom/ai-engineer-fork-sync
+      fork_sync_engine_ref: 0e1dd76db5b5ad60148f5935e4ff6a2870c54e6f
+      fork_sync_cheap_model: ai-engineer/GLM-5.3-Flash-Preview
+    secrets:
+      PROJECT_ACCESS_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
+      AIE_API_KEY: ${{ secrets.AIE_API_KEY }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
