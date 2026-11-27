@@ -1,0 +1,74 @@
+# Try-out VSIX for package zoocode-aie. Triggered by the v<version>-test tag
+# that fork-sync pushes. Does not create a vX.Y.Z-aie tag.
+name: AIE Publish Test VSIX
+
+on:
+  push:
+    tags:
+      - "v*-test"
+
+permissions:
+  contents: write
+
+jobs:
+  build_package:
+    if: endsWith(github.ref_name, '-test') && !contains(github.ref_name, '-aie')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          install-args: "--frozen-lockfile"
+
+      - name: Build VSIX
+        run: |
+          pnpm vsix
+          ls -la bin/
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: bin/*.vsix
+
+  publish_test:
+    needs: build_package
+    if: endsWith(github.ref_name, '-test') && !contains(github.ref_name, '-aie')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix
+          path: bin
+
+      - name: Publish zoo-code VSIX to the test release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          BUILT="$(ls bin/*.vsix | head -n1)"
+          ASSET="zoo-code-${VERSION}.vsix"
+          cp "${BUILT}" "bin/${ASSET}"
+          NOTES="Try-out VSIX for package zoocode-aie.
+
+          This is not an npm package. Download the release asset and install it:
+
+              code --install-extension ${ASSET}
+
+          Cutting ${TAG%-test}-aie stays a manual step after testers sign off."
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "bin/${ASSET}" --clobber
+          else
+            gh release create "${TAG}" \
+              --prerelease \
+              --target "${GITHUB_SHA}" \
+              --title "AIE try-out ${TAG}" \
+              --notes "${NOTES}" \
+              "bin/${ASSET}"
+          fi

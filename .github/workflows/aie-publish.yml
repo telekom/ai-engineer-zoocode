@@ -2,7 +2,6 @@ name: AIE Publish VSIX
 
 on:
   push:
-    
   workflow_dispatch:
 
 permissions:
